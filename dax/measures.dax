@@ -1,0 +1,38 @@
+-- Create a Date table first (Modeling > New table), then mark it as a date table.
+Date =
+ADDCOLUMNS (
+    CALENDAR ( DATE ( 2023, 1, 1 ), DATE ( 2025, 12, 31 ) ),
+    "Year", YEAR ( [Date] ),
+    "MonthNumber", MONTH ( [Date] ),
+    "MonthName", FORMAT ( [Date], "MMM" )
+)
+-- Relationship: Date[Date] (1) --> sales_data[OrderDate] (*)
+
+-- ===== Core KPIs =====
+Total Sales    = SUM ( sales_data[Sales] )
+Total Profit   = SUM ( sales_data[Profit] )
+Total Orders   = DISTINCTCOUNT ( sales_data[OrderID] )
+Total Quantity = SUM ( sales_data[Quantity] )
+
+Profit Margin % =
+DIVIDE ( [Total Profit], [Total Sales], 0 )
+
+Avg Order Value =
+DIVIDE ( [Total Sales], [Total Orders], 0 )
+
+-- ===== Time intelligence =====
+Sales LY =
+CALCULATE ( [Total Sales], SAMEPERIODLASTYEAR ( 'Date'[Date] ) )
+
+Sales YoY Growth % =
+DIVIDE ( [Total Sales] - [Sales LY], [Sales LY], BLANK () )
+
+Sales YTD =
+TOTALYTD ( [Total Sales], 'Date'[Date] )
+
+-- ===== Insight helpers =====
+Low Margin Flag =
+IF ( [Profit Margin %] < 0.05, "Low margin", "Healthy" )
+
+Sales Rank by SubCategory =
+RANKX ( ALL ( sales_data[SubCategory] ), [Total Sales], , DESC )
